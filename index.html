@@ -143,7 +143,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent); outlin
 
 /* 그리기 */
 #ink{position:absolute; inset:0; width:100%; height:100%; touch-action:none; pointer-events:none}
-body.drawing #ink{pointer-events:auto; cursor:crosshair}
+body.drawing .stage{cursor:crosshair}
 .dt{display:none}
 body.drawing .dt{display:inline-flex; align-items:center; justify-content:center}
 body.drawing #bigBtn, body.drawing #smallBtn, body.drawing #rotBtn, body.drawing #delBtn{display:none}
@@ -267,6 +267,7 @@ body.present #nameBox{display:none}
     <p><span class="key">전원 버튼</span> 과 <span class="key">소리 줄이기(－) 버튼</span> 을 동시에 눌러요.</p>
     <p>저장한 사진은 갤러리에서 볼 수 있어요.</p>
     <button class="btn primary" id="veilOk" type="button">알겠어요</button>
+    <p style="font-size:12px;color:var(--muted)">버전 v11 (그리기 중 물건 고정)</p>
   </div>
 </div>
 
@@ -405,6 +406,7 @@ body.present #nameBox{display:none}
   function pushHist(s){hist.push(s||snap());if(hist.length>60)hist.shift();}
   var saved=false,justDragged=false;
   function addItem(k,px,py){
+    setDraw(false);
     pushHist();
     var j=function(){return (Math.random()-.5)*.24;};
     var it={id:S.nextId++,k:k,x:px==null?.5+j():px,y:py==null?.5+j():py,s:24,r:0,z:++S.zc};
@@ -418,6 +420,7 @@ body.present #nameBox{display:none}
     var el=e.target.closest('.stk');
     if(!el){S.sel=null;markSel();return;}
     var it=find(Number(el.dataset.id));if(!it)return;
+    if(document.body.classList.contains('drawing'))return;
     e.preventDefault();
     S.sel=it.id;it.z=++S.zc;el.style.zIndex=it.z;markSel();
     var r=stage.getBoundingClientRect();
@@ -533,7 +536,7 @@ body.present #nameBox{display:none}
 
   /* ---------- 직접 그리기 ---------- */
   var ink=$('ink'),ctx=ink.getContext('2d');
-  var pen={c:'#1f2a44',w:.7,e:false},cur=null,inkW=0,inkH=0;
+  var pen={c:'#1f2a44',w:.7,e:false},cur=null,curMeta=null,inkW=0,inkH=0;
   function fitInk(){
     var d=dims(),r=window.devicePixelRatio||1;
     if(!d.W||!d.H)return;
@@ -554,21 +557,29 @@ body.present #nameBox{display:none}
     });
   }
   function pt(e){var r=ink.getBoundingClientRect();return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height];}
-  ink.addEventListener('pointerdown',function(e){
+  layer.addEventListener('pointerdown',function(e){
     if(!document.body.classList.contains('drawing'))return;
+    var se=e.target.closest('.stk');
+    curMeta={stk:se?Number(se.dataset.id):null,t:Date.now()};
     e.preventDefault();pushHist();
     cur={c:pen.c,w:pen.e?4:pen.w,e:pen.e,p:[pt(e)],id:e.pointerId};
     S.strokes.push(cur);seg(cur,cur.p[0],cur.p[0]);
-    try{ink.setPointerCapture(e.pointerId);}catch(err){}
+    try{layer.setPointerCapture(e.pointerId);}catch(err){}
     updUI();
   });
-  ink.addEventListener('pointermove',function(e){
+  layer.addEventListener('pointermove',function(e){
     if(!cur||e.pointerId!==cur.id)return;
     var p=pt(e);seg(cur,cur.p[cur.p.length-1],p);cur.p.push(p);
   });
-  function endInk(e){if(!cur||e.pointerId!==cur.id)return;cur=null;save();updUI();}
-  ink.addEventListener('pointerup',endInk);
-  ink.addEventListener('pointercancel',endInk);
+  function endInk(e){
+    if(!cur||e.pointerId!==cur.id)return;
+    var c=cur;cur=null;
+    var far=0,p0=c.p[0];
+    c.p.forEach(function(q){far=Math.max(far,Math.hypot((q[0]-p0[0])*inkW,(q[1]-p0[1])*inkH));});
+    save();updUI();
+  }
+  layer.addEventListener('pointerup',endInk);
+  layer.addEventListener('pointercancel',endInk);
   function setDraw(on){
     document.body.classList.toggle('drawing',on);
     $('penBtn').setAttribute('aria-pressed',String(on));
