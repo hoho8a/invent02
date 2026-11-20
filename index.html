@@ -134,7 +134,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent); outlin
 }
 
 .tools{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
-.tools .btn{min-height:56px; font-size:18px; padding:0 12px; white-space:nowrap}
+.tools .btn{min-height:56px; font-size:17px; padding:0 9px; white-space:nowrap}
+.tools .spacer{display:none}
+#saveBtn{margin-left:auto}
 .tools .spacer{flex:1}
 .btn.warn{border-color:var(--danger); color:var(--danger)}
 .btn.warn.ask{background:var(--danger); color:#fff}
@@ -143,7 +145,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent); outlin
 #ink{position:absolute; inset:0; width:100%; height:100%; touch-action:none; pointer-events:none}
 body.drawing #ink{pointer-events:auto; cursor:crosshair}
 .dt{display:none}
-body.drawing .dt{display:inline-flex}
+body.drawing .dt{display:inline-flex; align-items:center; justify-content:center}
 body.drawing #bigBtn, body.drawing #smallBtn, body.drawing #rotBtn, body.drawing #delBtn{display:none}
 .col{width:48px; height:48px; border-radius:50%; border:3px solid var(--panel); box-shadow:0 0 0 2px var(--line); padding:0}
 .col[aria-pressed="true"]{box-shadow:0 0 0 4px var(--accent)}
@@ -168,6 +170,7 @@ body.present #nameBox{display:none}
 .card .key{display:inline-block; padding:2px 10px; border-radius:8px; background:var(--chip); font-weight:700}
 
 @media (orientation:portrait){
+  .dragtxt{display:none}
   .work{grid-template-columns:1fr; grid-template-rows:minmax(0,1.15fr) minmax(0,1fr)}
   .right{order:1} .pal{order:2}
   .brand{font-size:22px}
@@ -176,8 +179,28 @@ body.present #nameBox{display:none}
   #nameInput{width:100%; min-width:0; flex:1}
 }
 @media (max-width:640px){
-  .step{font-size:13px; padding:4px 8px}
-  .tools .btn{min-height:48px; font-size:16px; padding:0 12px}
+  body{padding-block:6px}
+  .app{gap:6px}
+  .brand{display:none}
+  .top{gap:6px}
+  .nameBox{flex:1; min-width:0}
+  .nameBox label{display:none}
+  #nameInput{height:40px; font-size:16px}
+  .top .btn{min-height:40px; font-size:15px; padding:0 12px}
+  .steps{flex-wrap:nowrap; overflow-x:auto; gap:6px; padding-bottom:2px}
+  .step{flex:none; font-size:13px; padding:3px 9px}
+  .step b{width:20px; height:20px; font-size:12px}
+  .work{gap:6px; grid-template-rows:minmax(0,1.8fr) minmax(0,1fr)}
+  .right{gap:6px}
+  .tools{gap:4px}
+  body.drawing #clearBtn, body.drawing #saveBtn{display:none}
+  .tools .btn{min-height:42px; font-size:14px; padding:0 7px}
+  .col{width:34px; height:34px; border-width:2px}
+  .chips{padding:6px; gap:4px}
+  .chip{min-height:34px; font-size:14px; padding:0 10px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); padding:6px; gap:6px}
+  .item{min-height:76px; padding:5px 2px 4px; font-size:13px}
+  .item svg{width:40px; height:40px}
 }
 </style>
 </head>
@@ -187,9 +210,10 @@ body.present #nameBox{display:none}
   <header class="top">
     <h1 class="brand">발명가 스티커북</h1>
     <div class="steps" aria-label="활동 순서">
-      <div class="step" id="st1"><b>1</b>불편한 점은 활동지에 써요</div>
-      <div class="step" id="st2"><b>2</b><span id="st2t">물건 2개 이상 붙여요 (0/2)</span></div>
+      <div class="step" id="st1"><b>1</b>물건을 눌러서<span class="dragtxt">&nbsp;(끌어서)</span>&nbsp;판에 넣어요</div>
+      <div class="step" id="st2"><b>2</b><span id="st2t">2개 이상 붙여요 (0/2)</span></div>
       <div class="step" id="st3"><b>3</b>이름을 지어요</div>
+      <div class="step" id="st4"><b>4</b>화면 저장을 눌러요</div>
     </div>
     <div class="nameBox" id="nameBox">
       <label for="nameInput">발명품 이름</label>
@@ -225,8 +249,8 @@ body.present #nameBox{display:none}
         <button class="col dt" type="button" data-c="#17925a" style="background:#17925a" aria-label="초록" aria-pressed="false"></button>
         <button class="col dt" type="button" data-c="#3b6cf6" style="background:#3b6cf6" aria-label="파랑" aria-pressed="false"></button>
         <button class="col dt" type="button" data-c="#8e4ec6" style="background:#8e4ec6" aria-label="보라" aria-pressed="false"></button>
-        <button class="btn dt" id="thinBtn" type="button" data-w="0.7" aria-pressed="false">가는 펜</button>
-        <button class="btn dt" id="thickBtn" type="button" data-w="1.8" aria-pressed="true">굵은 펜</button>
+        <button class="btn dt" id="thinBtn" type="button" data-w="0.7" aria-pressed="true">가는 펜</button>
+        <button class="btn dt" id="thickBtn" type="button" data-w="1.8" aria-pressed="false">굵은 펜</button>
         <button class="btn dt" id="eraBtn" type="button" aria-pressed="false">지우개</button>
         <span class="spacer"></span>
         <button class="btn" id="undoBtn" type="button">↶ 되돌리기</button>
@@ -249,42 +273,54 @@ body.present #nameBox{display:none}
 <script>
 (function(){
   'use strict';
-  /* ---------- 물건 33개 (교과서 38쪽 순서) ---------- */
-  var C={clean:'청소',kitchen:'부엌',study:'공부',body:'씻기·입기',season:'더위·추위',play:'놀이'};
+  /* ---------- 물건 45개 ---------- */
+  var C={home:'집안',elec:'전기제품',info:'컴퓨터·폰',study:'공부',food:'먹거리',wear:'몸·입기',play:'놀이'};
   var ITEMS=[
     ['가위','study','<path d="M18 6L43 45" stroke-width="8"/><path d="M46 6L21 45" stroke-width="8"/><path d="M18 6L43 45" stroke="#cfd6df" stroke-width="4"/><path d="M46 6L21 45" stroke="#cfd6df" stroke-width="4"/><circle cx="21" cy="52" r="7" fill="#ef5b5b"/><circle cx="43" cy="52" r="7" fill="#ef5b5b"/>'],
     ['풀','study','<rect x="21" y="30" width="22" height="28" rx="3" fill="#4f8cff"/><rect x="24" y="38" width="16" height="10" fill="#fff" stroke-width="1.5"/><rect x="24" y="14" width="16" height="17" rx="2" fill="#ffd94a"/><rect x="27" y="6" width="10" height="9" rx="2" fill="#e8e8f5"/>'],
-    ['빗자루','clean','<rect x="29" y="4" width="6" height="34" rx="2" fill="#b8814a"/><path d="M20 36H44L50 60H14Z" fill="#e8c26a"/><path d="M24 46L21 60M32 46V60M40 46L43 60" stroke-width="1.8"/><rect x="20" y="34" width="24" height="7" rx="2" fill="#ef5b5b"/>'],
-    ['쓰레받기','clean','<path d="M6 40L46 48L58 58H6Z" fill="#4fb3a5"/><path d="M6 40V14Q6 10 10 10H22" stroke-width="4"/><path d="M28 47Q32 39 38 48Z" fill="#c9a36b" stroke-width="1.8"/>'],
-    ['믹서기','kitchen','<path d="M20 8H44L40 40H24Z" fill="#bfe6ff"/><path d="M22.5 28H41.5L40 40H24Z" fill="#ff8fb1" stroke-width="1.5"/><rect x="18" y="4" width="28" height="6" rx="2" fill="#555a6e"/><path d="M22 40H42L46 58H18Z" fill="#ef5b5b"/><circle cx="32" cy="50" r="3" fill="#fff"/>'],
-    ['맷돌','kitchen','<path d="M8 44V50A24 9 0 0 0 56 50V44Z" fill="#7a7a85"/><ellipse cx="32" cy="44" rx="24" ry="9" fill="#9b9ba6"/><path d="M12 32V39A20 7 0 0 0 52 39V32Z" fill="#aaaab5"/><ellipse cx="32" cy="32" rx="20" ry="7" fill="#c4c4cf"/><circle cx="32" cy="32" r="3" fill="#33384a"/><rect x="44" y="10" width="5" height="22" rx="2" fill="#b8814a"/>'],
+    ['믹서기','food','<path d="M20 8H44L40 40H24Z" fill="#bfe6ff"/><path d="M22.5 28H41.5L40 40H24Z" fill="#ff8fb1" stroke-width="1.5"/><rect x="18" y="4" width="28" height="6" rx="2" fill="#555a6e"/><path d="M22 40H42L46 58H18Z" fill="#ef5b5b"/><circle cx="32" cy="50" r="3" fill="#fff"/>'],
     ['연필','study','<g transform="rotate(45 32 32)"><rect x="26" y="4" width="12" height="40" fill="#ffd94a"/><rect x="26" y="4" width="12" height="8" fill="#f28ab0"/><path d="M26 44H38L32 58Z" fill="#f2d2a9"/><path d="M29.6 52H34.4L32 58Z" fill="#33384a" stroke-width="1"/></g>'],
     ['종이','study','<path d="M16 6H40L50 16V58H16Z" fill="#fff"/><path d="M40 6V16H50" fill="#e5e9f2"/><path d="M22 28H44M22 36H44M22 44H36" stroke="#9aa5b1" stroke-width="2"/>'],
-    ['청소기','clean','<path d="M40 40Q55 40 55 24V12" stroke-width="8"/><path d="M40 40Q55 40 55 24V12" stroke="#cfd6df" stroke-width="3.5"/><path d="M48 8H62L60 14H50Z" fill="#555a6e"/><rect x="5" y="30" width="36" height="20" rx="8" fill="#ef7a3c"/><circle cx="14" cy="55" r="6" fill="#555a6e"/><circle cx="34" cy="55" r="6" fill="#555a6e"/><circle cx="26" cy="40" r="3.5" fill="#fff"/>'],
-    ['촛불','season','<ellipse cx="32" cy="58" rx="17" ry="3.5" fill="#9aa5b1"/><rect x="24" y="30" width="16" height="28" rx="2" fill="#fff4cf"/><path d="M32 30V25" stroke-width="2"/><path d="M32 5C41 15 41 25 32 25C23 25 23 15 32 5Z" fill="#ff9f2e"/><path d="M32 14C36 19 36 23.5 32 23.5C28 23.5 28 19 32 14Z" fill="#ffe066" stroke-width="0"/>'],
-    ['냉장고','kitchen','<rect x="16" y="4" width="32" height="56" rx="4" fill="#dbe9f4"/><path d="M16 24H48"/><path d="M22 11V19M22 30V42" stroke-width="3.5"/>'],
-    ['칫솔','body','<g transform="rotate(-45 32 32)"><rect x="6" y="28" width="46" height="8" rx="4" fill="#4f8cff"/><rect x="42" y="24" width="16" height="8" rx="2" fill="#fff"/><path d="M45 24V17M50 24V17M55 24V17" stroke="#4fb3a5" stroke-width="3"/></g>'],
-    ['치약','body','<g transform="rotate(-30 32 32)"><path d="M12 22H44L48 28V36L44 42H12Z" fill="#5cc8ff"/><rect x="6" y="24" width="6" height="16" fill="#3fa6dd"/><path d="M21 22V42" stroke="#fff" stroke-width="3"/><rect x="48" y="28" width="10" height="8" rx="2" fill="#ef5b5b"/></g>'],
+    ['청소기','home','<path d="M40 40Q55 40 55 24V12" stroke-width="8"/><path d="M40 40Q55 40 55 24V12" stroke="#cfd6df" stroke-width="3.5"/><path d="M48 8H62L60 14H50Z" fill="#555a6e"/><rect x="5" y="30" width="36" height="20" rx="8" fill="#ef7a3c"/><circle cx="14" cy="55" r="6" fill="#555a6e"/><circle cx="34" cy="55" r="6" fill="#555a6e"/><circle cx="26" cy="40" r="3.5" fill="#fff"/>'],
+    ['냉장고','home','<rect x="16" y="4" width="32" height="56" rx="4" fill="#dbe9f4"/><path d="M16 24H48"/><path d="M22 11V19M22 30V42" stroke-width="3.5"/>'],
+    ['칫솔','wear','<g transform="rotate(-45 32 32)"><rect x="6" y="28" width="46" height="8" rx="4" fill="#4f8cff"/><rect x="42" y="24" width="16" height="8" rx="2" fill="#fff"/><path d="M45 24V17M50 24V17M55 24V17" stroke="#4fb3a5" stroke-width="3"/></g>'],
+    ['치약','wear','<g transform="rotate(-30 32 32)"><path d="M12 22H44L48 28V36L44 42H12Z" fill="#5cc8ff"/><rect x="6" y="24" width="6" height="16" fill="#3fa6dd"/><path d="M21 22V42" stroke="#fff" stroke-width="3"/><rect x="48" y="28" width="10" height="8" rx="2" fill="#ef5b5b"/></g>'],
     ['책','study','<path d="M4 20V54Q20 48 32 56Q44 48 60 54V20Z" fill="#4f8cff"/><path d="M6 14Q20 8 32 16Q44 8 58 14V50Q44 44 32 52Q20 44 6 50Z" fill="#fff"/><path d="M32 16V52"/><path d="M12 23Q19 21 26 25M12 31Q19 29 26 33M38 25Q45 21 52 23M38 33Q45 29 52 31" stroke="#9aa5b1" stroke-width="1.8"/>'],
-    ['에어컨','season','<rect x="4" y="10" width="56" height="22" rx="6" fill="#f2f5f9"/><path d="M10 26H54"/><circle cx="12" cy="17" r="2" fill="#4fb3a5"/><path d="M16 40Q20 44 16 48Q12 52 16 56M32 40Q36 44 32 48Q28 52 32 56M48 40Q52 44 48 48Q44 52 48 56" stroke="#5cc8ff" stroke-width="3"/>'],
-    ['전등','season','<path d="M32 6C46 6 52 18 46 30C43 35 42 38 42 42H22C22 38 21 35 18 30C12 18 18 6 32 6Z" fill="#ffe066"/><rect x="23" y="42" width="18" height="6" rx="2" fill="#9aa5b1"/><rect x="25" y="48" width="14" height="6" rx="2" fill="#9aa5b1"/><path d="M28 54H36L34 59H30Z" fill="#555a6e"/>'],
-    ['컴퓨터','study','<rect x="8" y="6" width="48" height="34" rx="4" fill="#33384a"/><rect x="12" y="10" width="40" height="26" rx="2" fill="#8fd3ff"/><path d="M26 40H38L40 48H24Z" fill="#9aa5b1"/><rect x="14" y="50" width="36" height="8" rx="2" fill="#e5e9f2"/>'],
+    ['에어컨','elec','<rect x="4" y="10" width="56" height="22" rx="6" fill="#f2f5f9"/><path d="M10 26H54"/><circle cx="12" cy="17" r="2" fill="#4fb3a5"/><path d="M16 40Q20 44 16 48Q12 52 16 56M32 40Q36 44 32 48Q28 52 32 56M48 40Q52 44 48 48Q44 52 48 56" stroke="#5cc8ff" stroke-width="3"/>'],
+    ['전등','elec','<path d="M32 6C46 6 52 18 46 30C43 35 42 38 42 42H22C22 38 21 35 18 30C12 18 18 6 32 6Z" fill="#ffe066"/><rect x="23" y="42" width="18" height="6" rx="2" fill="#9aa5b1"/><rect x="25" y="48" width="14" height="6" rx="2" fill="#9aa5b1"/><path d="M28 54H36L34 59H30Z" fill="#555a6e"/>'],
+    ['컴퓨터','info','<rect x="8" y="6" width="48" height="34" rx="4" fill="#33384a"/><rect x="12" y="10" width="40" height="26" rx="2" fill="#8fd3ff"/><path d="M26 40H38L40 48H24Z" fill="#9aa5b1"/><rect x="14" y="50" width="36" height="8" rx="2" fill="#e5e9f2"/>'],
     ['자전거','play','<circle cx="14" cy="44" r="11"/><circle cx="50" cy="44" r="11"/><path d="M14 44L27 44L22 26H38L50 44M27 44L38 26M38 26L36 18H43M17 24H27" stroke="#ef5b5b" stroke-width="3.5"/>'],
     ['비치볼','play','<path d="M32 32L32 8A24 24 0 0 1 52.8 20Z" fill="#ef5b5b"/><path d="M32 32L52.8 20A24 24 0 0 1 52.8 44Z" fill="#fff"/><path d="M32 32L52.8 44A24 24 0 0 1 32 56Z" fill="#4f8cff"/><path d="M32 32L32 56A24 24 0 0 1 11.2 44Z" fill="#ffd94a"/><path d="M32 32L11.2 44A24 24 0 0 1 11.2 20Z" fill="#fff"/><path d="M32 32L11.2 20A24 24 0 0 1 32 8Z" fill="#4fb3a5"/><circle cx="32" cy="32" r="24"/>'],
-    ['샤워기','body','<path d="M8 8H30Q38 8 38 16V20" stroke="#9aa5b1" stroke-width="6"/><path d="M8 8H30Q38 8 38 16V20" stroke-width="1"/><path d="M26 20H50L55 32H21Z" fill="#cfd6df"/><path d="M26 40V47M34 42V52M42 40V47M50 42V52M30 53V59M46 53V59" stroke="#5cc8ff" stroke-width="3"/>'],
-    ['찬장','kitchen','<rect x="10" y="6" width="44" height="46" rx="3" fill="#c98f55"/><path d="M32 6V52"/><rect x="15" y="12" width="14" height="34" rx="2" fill="#dba66b" stroke-width="1.8"/><rect x="35" y="12" width="14" height="34" rx="2" fill="#dba66b" stroke-width="1.8"/><circle cx="27" cy="30" r="2" fill="#33384a"/><circle cx="37" cy="30" r="2" fill="#33384a"/><path d="M16 52V60M48 52V60" stroke-width="4"/>'],
-    ['얼음','kitchen','<path d="M32 8L54 19L32 30L10 19Z" fill="#e6f7ff"/><path d="M10 19L32 30V56L10 45Z" fill="#aee0fa"/><path d="M32 30L54 19V45L32 56Z" fill="#8bd0f2"/><path d="M18 20L30 26M16 30V38" stroke="#fff" stroke-width="2.5"/>'],
-    ['안경','body','<circle cx="17" cy="36" r="12" fill="#e8f6ff"/><circle cx="47" cy="36" r="12" fill="#e8f6ff"/><path d="M29 34Q32 30 35 34M5 33L2 25M59 33L62 25" stroke-width="3.5"/>'],
-    ['아이스박스','kitchen','<rect x="6" y="24" width="52" height="32" rx="4" fill="#4f8cff"/><rect x="4" y="18" width="56" height="10" rx="3" fill="#fff"/><path d="M22 18V12Q22 8 26 8H38Q42 8 42 12V18" stroke-width="4"/><rect x="28" y="30" width="8" height="8" rx="1" fill="#ffd94a"/>'],
-    ['수박','kitchen','<path d="M6 24A26 26 0 0 0 58 24Z" fill="#3fa65a"/><path d="M10 24A22 22 0 0 0 54 24Z" fill="#f4f7e8" stroke-width="1.5"/><path d="M12.5 24A19.5 19.5 0 0 0 51.5 24Z" fill="#ef5b5b" stroke-width="1.5"/><ellipse cx="24" cy="34" rx="2" ry="3" fill="#33384a" stroke-width="0"/><ellipse cx="32" cy="40" rx="2" ry="3" fill="#33384a" stroke-width="0"/><ellipse cx="40" cy="34" rx="2" ry="3" fill="#33384a" stroke-width="0"/><ellipse cx="32" cy="31" rx="2" ry="3" fill="#33384a" stroke-width="0"/>'],
-    ['음료수병','kitchen','<path d="M27 8H37V17Q37 23 44 29V56Q44 60 40 60H24Q20 60 20 56V29Q27 23 27 17Z" fill="#8fd3a0"/><rect x="26" y="3" width="12" height="6" rx="1" fill="#ef5b5b"/><rect x="20" y="36" width="24" height="14" fill="#fff" stroke-width="1.5"/><circle cx="32" cy="43" r="3" fill="#ef5b5b" stroke-width="0"/>'],
+    ['샤워기','home','<path d="M8 8H30Q38 8 38 16V20" stroke="#9aa5b1" stroke-width="6"/><path d="M8 8H30Q38 8 38 16V20" stroke-width="1"/><path d="M26 20H50L55 32H21Z" fill="#cfd6df"/><path d="M26 40V47M34 42V52M42 40V47M50 42V52M30 53V59M46 53V59" stroke="#5cc8ff" stroke-width="3"/>'],
+    ['찬장','home','<rect x="10" y="6" width="44" height="46" rx="3" fill="#c98f55"/><path d="M32 6V52"/><rect x="15" y="12" width="14" height="34" rx="2" fill="#dba66b" stroke-width="1.8"/><rect x="35" y="12" width="14" height="34" rx="2" fill="#dba66b" stroke-width="1.8"/><circle cx="27" cy="30" r="2" fill="#33384a"/><circle cx="37" cy="30" r="2" fill="#33384a"/><path d="M16 52V60M48 52V60" stroke-width="4"/>'],
+    ['얼음','food','<path d="M32 8L54 19L32 30L10 19Z" fill="#e6f7ff"/><path d="M10 19L32 30V56L10 45Z" fill="#aee0fa"/><path d="M32 30L54 19V45L32 56Z" fill="#8bd0f2"/><path d="M18 20L30 26M16 30V38" stroke="#fff" stroke-width="2.5"/>'],
+    ['안경','wear','<circle cx="17" cy="36" r="12" fill="#e8f6ff"/><circle cx="47" cy="36" r="12" fill="#e8f6ff"/><path d="M29 34Q32 30 35 34M5 33L2 25M59 33L62 25" stroke-width="3.5"/>'],
+    ['아이스박스','food','<rect x="6" y="24" width="52" height="32" rx="4" fill="#4f8cff"/><rect x="4" y="18" width="56" height="10" rx="3" fill="#fff"/><path d="M22 18V12Q22 8 26 8H38Q42 8 42 12V18" stroke-width="4"/><rect x="28" y="30" width="8" height="8" rx="1" fill="#ffd94a"/>'],
+    ['수박','food','<path d="M6 24A26 26 0 0 0 58 24Z" fill="#3fa65a"/><path d="M10 24A22 22 0 0 0 54 24Z" fill="#f4f7e8" stroke-width="1.5"/><path d="M12.5 24A19.5 19.5 0 0 0 51.5 24Z" fill="#ef5b5b" stroke-width="1.5"/><ellipse cx="24" cy="34" rx="2" ry="3" fill="#33384a" stroke-width="0"/><ellipse cx="32" cy="40" rx="2" ry="3" fill="#33384a" stroke-width="0"/><ellipse cx="40" cy="34" rx="2" ry="3" fill="#33384a" stroke-width="0"/><ellipse cx="32" cy="31" rx="2" ry="3" fill="#33384a" stroke-width="0"/>'],
+    ['음료수병','food','<path d="M27 8H37V17Q37 23 44 29V56Q44 60 40 60H24Q20 60 20 56V29Q27 23 27 17Z" fill="#8fd3a0"/><rect x="26" y="3" width="12" height="6" rx="1" fill="#ef5b5b"/><rect x="20" y="36" width="24" height="14" fill="#fff" stroke-width="1.5"/><circle cx="32" cy="43" r="3" fill="#ef5b5b" stroke-width="0"/>'],
     ['탁구채','play','<g transform="rotate(30 32 32)"><rect x="28" y="38" width="8" height="20" rx="3" fill="#d4a060"/><circle cx="32" cy="22" r="17" fill="#ef5b5b"/></g><circle cx="51" cy="51" r="6" fill="#fff"/>'],
-    ['사진기','study','<rect x="6" y="18" width="52" height="34" rx="6" fill="#555a6e"/><rect x="18" y="12" width="14" height="8" rx="2" fill="#555a6e"/><circle cx="32" cy="35" r="12" fill="#fff"/><circle cx="32" cy="35" r="8" fill="#4f8cff"/><circle cx="29" cy="32" r="2.5" fill="#fff" stroke-width="0"/><circle cx="50" cy="25" r="2.5" fill="#ffd94a" stroke-width="1.5"/>'],
-    ['가스레인지','kitchen','<rect x="6" y="30" width="52" height="26" rx="4" fill="#cfd6df"/><ellipse cx="20" cy="30" rx="11" ry="4" fill="#555a6e"/><ellipse cx="44" cy="30" rx="11" ry="4" fill="#555a6e"/><path d="M14 27L17 17L20 24L23 17L26 27Z" fill="#ff9f2e" stroke-width="1.8"/><path d="M38 27L41 17L44 24L47 17L50 27Z" fill="#ff9f2e" stroke-width="1.8"/><circle cx="16" cy="45" r="4" fill="#555a6e"/><circle cx="32" cy="45" r="4" fill="#555a6e"/><circle cx="48" cy="45" r="4" fill="#555a6e"/>'],
-    ['난로','season','<rect x="12" y="8" width="40" height="8" rx="3" fill="#555a6e"/><rect x="14" y="14" width="36" height="40" rx="8" fill="#ef7a3c"/><rect x="20" y="22" width="24" height="20" rx="4" fill="#ffd94a"/><path d="M32 40C27 34 32 31 32 26C37 31 37 36 32 40Z" fill="#ef5b5b" stroke-width="1.5"/><path d="M20 54V60M44 54V60" stroke-width="4"/>'],
-    ['장갑','body','<rect x="16" y="16" width="8" height="22" rx="4" fill="#ef5b5b"/><rect x="24" y="10" width="8" height="28" rx="4" fill="#ef5b5b"/><rect x="32" y="8" width="8" height="30" rx="4" fill="#ef5b5b"/><rect x="40" y="14" width="8" height="24" rx="4" fill="#ef5b5b"/><rect x="16" y="28" width="32" height="26" rx="7" fill="#ef5b5b"/><rect x="5" y="34" width="10" height="18" rx="5" fill="#ef5b5b" transform="rotate(-25 10 43)"/><rect x="15" y="52" width="34" height="8" rx="2" fill="#ffd94a"/>'],
+    ['사진기','info','<rect x="6" y="18" width="52" height="34" rx="6" fill="#555a6e"/><rect x="18" y="12" width="14" height="8" rx="2" fill="#555a6e"/><circle cx="32" cy="35" r="12" fill="#fff"/><circle cx="32" cy="35" r="8" fill="#4f8cff"/><circle cx="29" cy="32" r="2.5" fill="#fff" stroke-width="0"/><circle cx="50" cy="25" r="2.5" fill="#ffd94a" stroke-width="1.5"/>'],
+    ['가스레인지','elec','<rect x="6" y="30" width="52" height="26" rx="4" fill="#cfd6df"/><ellipse cx="20" cy="30" rx="11" ry="4" fill="#555a6e"/><ellipse cx="44" cy="30" rx="11" ry="4" fill="#555a6e"/><path d="M14 27L17 17L20 24L23 17L26 27Z" fill="#ff9f2e" stroke-width="1.8"/><path d="M38 27L41 17L44 24L47 17L50 27Z" fill="#ff9f2e" stroke-width="1.8"/><circle cx="16" cy="45" r="4" fill="#555a6e"/><circle cx="32" cy="45" r="4" fill="#555a6e"/><circle cx="48" cy="45" r="4" fill="#555a6e"/>'],
+    ['난로','elec','<rect x="12" y="8" width="40" height="8" rx="3" fill="#555a6e"/><rect x="14" y="14" width="36" height="40" rx="8" fill="#ef7a3c"/><rect x="20" y="22" width="24" height="20" rx="4" fill="#ffd94a"/><path d="M32 40C27 34 32 31 32 26C37 31 37 36 32 40Z" fill="#ef5b5b" stroke-width="1.5"/><path d="M20 54V60M44 54V60" stroke-width="4"/>'],
+    ['장갑','wear','<rect x="16" y="16" width="8" height="22" rx="4" fill="#ef5b5b"/><rect x="24" y="10" width="8" height="28" rx="4" fill="#ef5b5b"/><rect x="32" y="8" width="8" height="30" rx="4" fill="#ef5b5b"/><rect x="40" y="14" width="8" height="24" rx="4" fill="#ef5b5b"/><rect x="16" y="28" width="32" height="26" rx="7" fill="#ef5b5b"/><rect x="5" y="34" width="10" height="18" rx="5" fill="#ef5b5b" transform="rotate(-25 10 43)"/><rect x="15" y="52" width="34" height="8" rx="2" fill="#ffd94a"/>'],
     ['돗자리','play','<path d="M14 16H58L50 52H6Z" fill="#ffd94a"/><path d="M24 16L16 52M34 16L28 52M44 16L40 52M12 28H55M9 40H52" stroke="#ef5b5b" stroke-width="2.5"/>'],
-    ['아궁이','kitchen','<path d="M6 58V32Q6 26 12 26H52Q58 26 58 32V58Z" fill="#b59a7a"/><path d="M20 58V44Q20 36 32 36Q44 36 44 44V58Z" fill="#33384a"/><path d="M32 57C24 53 28 47 32 41C36 47 40 53 32 57Z" fill="#ff9f2e" stroke-width="1.8"/><path d="M32 54C29 52 31 50 32 48C34 50 35 52 32 54Z" fill="#ffe066" stroke-width="0"/><path d="M16 26Q16 12 32 12Q48 12 48 26Z" fill="#555a6e"/><circle cx="32" cy="9" r="3" fill="#555a6e"/>']
+    ['스마트폰','info','<rect x="18" y="4" width="28" height="56" rx="5" fill="#33384a"/><rect x="21" y="10" width="22" height="42" rx="2" fill="#8fd3ff"/><rect x="24" y="14" width="6" height="6" rx="1.5" fill="#fff" stroke-width="0"/><rect x="34" y="14" width="6" height="6" rx="1.5" fill="#ffd94a" stroke-width="0"/><rect x="24" y="24" width="6" height="6" rx="1.5" fill="#ef5b5b" stroke-width="0"/><rect x="34" y="24" width="6" height="6" rx="1.5" fill="#4fb36b" stroke-width="0"/><circle cx="32" cy="56" r="1.8" fill="#fff" stroke-width="0"/>'],
+    ['리모컨','elec','<rect x="20" y="4" width="24" height="56" rx="8" fill="#555a6e"/><circle cx="32" cy="14" r="4" fill="#ef5b5b" stroke-width="1.5"/><rect x="26" y="24" width="12" height="6" rx="2" fill="#9aa5b1" stroke-width="1.5"/><circle cx="27" cy="38" r="3" fill="#4f8cff" stroke-width="1.5"/><circle cx="37" cy="38" r="3" fill="#ffd94a" stroke-width="1.5"/><circle cx="27" cy="46" r="3" fill="#4fb36b" stroke-width="1.5"/><circle cx="37" cy="46" r="3" fill="#fff" stroke-width="1.5"/><circle cx="32" cy="54" r="2.5" fill="#cfd6df" stroke-width="1.5"/>'],
+    ['무선 이어폰','info','<rect x="14" y="26" width="8" height="30" rx="4" fill="#fff"/><circle cx="18" cy="20" r="11" fill="#fff"/><circle cx="18" cy="20" r="4" fill="#cfd6df" stroke-width="1.5"/><rect x="42" y="26" width="8" height="30" rx="4" fill="#fff"/><circle cx="46" cy="20" r="11" fill="#fff"/><circle cx="46" cy="20" r="4" fill="#cfd6df" stroke-width="1.5"/>'],
+    ['텔레비전','elec','<path d="M26 10L20 3M38 10L44 3" stroke-width="2.5"/><rect x="4" y="10" width="56" height="38" rx="4" fill="#33384a"/><rect x="8" y="14" width="48" height="30" rx="2" fill="#8fd3ff"/><path d="M12 40L22 30M20 40L30 30" stroke="#fff" stroke-width="2.5"/><path d="M20 58H44M32 48V58" stroke-width="3.5"/>'],
+    ['컴퓨터 마우스','info','<path d="M32 6C44 6 50 14 50 28V40C50 52 42 60 32 60C22 60 14 52 14 40V28C14 14 20 6 32 6Z" fill="#e5e9f2"/><path d="M14 28H50M32 6V28"/><rect x="29" y="12" width="6" height="11" rx="3" fill="#ef5b5b"/>'],
+    ['전자레인지','elec','<rect x="4" y="14" width="56" height="38" rx="4" fill="#cfd6df"/><rect x="9" y="19" width="30" height="28" rx="2" fill="#33384a"/><rect x="12" y="22" width="24" height="22" rx="1" fill="#ffd94a" stroke-width="1.5"/><rect x="20" y="32" width="8" height="10" rx="1.5" fill="#fff" stroke-width="1.5"/><circle cx="49" cy="26" r="4" fill="#fff"/><rect x="44" y="35" width="10" height="4" rx="1" fill="#555a6e" stroke-width="1.2"/><rect x="44" y="42" width="10" height="4" rx="1" fill="#555a6e" stroke-width="1.2"/><path d="M12 52V57M52 52V57" stroke-width="4"/>'],
+    ['컴퓨터 키보드','info','<rect x="3" y="16" width="58" height="34" rx="4" fill="#e5e9f2"/><rect x="7" y="22" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="15" y="22" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="23" y="22" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="31" y="22" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="39" y="22" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="47" y="22" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="10" y="30" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="18" y="30" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="26" y="30" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="34" y="30" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="42" y="30" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="50" y="30" width="6" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/><rect x="16" y="38" width="32" height="6" rx="1.2" fill="#fff" stroke-width="1.4"/>'],
+    ['사과','food','<path d="M32 18C24 12 10 16 10 32C10 46 20 58 28 58C30 58 31 57 32 57C33 57 34 58 36 58C44 58 54 46 54 32C54 16 40 12 32 18Z" fill="#ef5b5b"/><path d="M32 18C32 12 34 8 38 5" stroke-width="3.5"/><path d="M36 12C40 6 48 6 50 10C46 14 40 14 36 12Z" fill="#4fb36b"/><path d="M17 30Q17 25 22 22" stroke="#fff" stroke-width="3"/>'],
+    ['지우개','study','<g transform="rotate(-25 32 32)"><rect x="6" y="20" width="52" height="24" rx="4" fill="#f28ab0"/><path d="M6 24Q6 20 10 20H22V44H10Q6 44 6 40Z" fill="#4f8cff"/><path d="M22 20V44"/></g>'],
+    ['책가방','study','<path d="M24 12Q24 4 32 4Q40 4 40 12" stroke-width="3.5"/><rect x="10" y="10" width="44" height="50" rx="12" fill="#4f8cff"/><rect x="16" y="36" width="32" height="18" rx="5" fill="#2f6fe0"/><path d="M24 44H40" stroke="#ffd94a" stroke-width="3"/><path d="M18 24H46" stroke-width="2"/>'],
+    ['볼펜','study','<g transform="rotate(45 32 32)"><rect x="27" y="4" width="10" height="42" rx="3" fill="#4f8cff"/><rect x="27" y="4" width="10" height="9" rx="3" fill="#33384a"/><path d="M27 46H37L32 58Z" fill="#cfd6df"/><path d="M30.5 54H33.5L32 58Z" fill="#33384a" stroke-width="1"/><path d="M41 10V26" stroke="#ef5b5b" stroke-width="3"/></g>'],
+    ['우산','wear','<path d="M32 6V3" stroke-width="3"/><path d="M6 32A26 26 0 0 1 58 32Q51 27 45 32Q38 27 32 32Q26 27 19 32Q13 27 6 32Z" fill="#ef5b5b"/><path d="M32 6Q24 18 19 32M32 6Q40 18 45 32M32 6V32" stroke-width="1.8"/><path d="M32 32V54Q32 60 26 60Q21 60 21 55" stroke-width="3.5"/>'],
+    ['모자','wear','<path d="M10 42C10 24 20 12 34 12C46 12 54 22 54 42Z" fill="#ef5b5b"/><path d="M34 12Q28 26 30 42" stroke-width="1.8"/><circle cx="34" cy="12" r="3" fill="#c93a3a"/><path d="M8 42H62Q62 50 50 50H8Q4 50 8 42Z" fill="#c93a3a"/>'],
+    ['의자','home','<rect x="14" y="6" width="8" height="30" rx="3" fill="#c98f55"/><path d="M14 14H22M14 22H22" stroke-width="1.8"/><rect x="14" y="32" width="38" height="8" rx="3" fill="#dba66b"/><rect x="16" y="40" width="5" height="20" fill="#c98f55"/><rect x="46" y="40" width="5" height="20" fill="#c98f55"/>'],
+    ['시계','home','<circle cx="32" cy="32" r="27" fill="#ffd94a"/><circle cx="32" cy="32" r="21" fill="#fff"/><path d="M32 14V18M32 46V50M14 32H18M46 32H50" stroke-width="3"/><path d="M32 32V21" stroke-width="3.5"/><path d="M32 32L41 37" stroke-width="3"/><circle cx="32" cy="32" r="2.5" fill="#ef5b5b" stroke-width="1.5"/>'],
+    ['휴대용 선풍기','elec','<rect x="26" y="38" width="12" height="22" rx="5" fill="#4f8cff"/><circle cx="32" cy="24" r="20" fill="#e8f6ff"/><ellipse cx="32" cy="14" rx="5" ry="8" fill="#5cc8ff" transform="rotate(0 32 24)"/><ellipse cx="32" cy="14" rx="5" ry="8" fill="#5cc8ff" transform="rotate(120 32 24)"/><ellipse cx="32" cy="14" rx="5" ry="8" fill="#5cc8ff" transform="rotate(240 32 24)"/><circle cx="32" cy="24" r="3.5" fill="#ffd94a" stroke-width="1.8"/>'],
+    ['침대','home','<rect x="4" y="14" width="8" height="42" rx="2" fill="#c98f55"/><rect x="52" y="30" width="8" height="26" rx="2" fill="#c98f55"/><rect x="12" y="38" width="40" height="8" rx="2" fill="#dba66b"/><rect x="12" y="28" width="40" height="12" rx="3" fill="#fff"/><path d="M26 28H52V40H26Z" fill="#4f8cff"/><rect x="14" y="21" width="14" height="9" rx="4" fill="#ffd94a"/>']
   ];
   function svg(inner){
     return '<svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="#33384a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">'+inner+'</g></svg>';
@@ -312,7 +348,7 @@ body.present #nameBox{display:none}
     var box=$('chips');box.innerHTML='';
     catKeys.forEach(function(k){
       var b=document.createElement('button');b.type='button';b.className='chip';
-      b.textContent=k==='all'?'전체 33':C[k];
+      b.textContent=k==='all'?'전체 '+ITEMS.length:C[k];
       b.setAttribute('aria-pressed',String(k===curCat));
       b.addEventListener('click',function(){curCat=k;buildChips();buildGrid();});
       box.appendChild(b);
@@ -324,7 +360,7 @@ body.present #nameBox{display:none}
       if(curCat!=='all'&&it[1]!==curCat)return;
       var b=document.createElement('button');b.type='button';b.className='item';b.dataset.k=idx;
       b.innerHTML=svg(it[2])+'<span>'+it[0]+'</span><i class="badge" hidden></i>';
-      b.addEventListener('click',function(){addItem(idx);});
+      b.addEventListener('click',function(){if(justDragged)return;addItem(idx);});
       grid.appendChild(b);
     });
     updBadges();
@@ -367,10 +403,11 @@ body.present #nameBox{display:none}
     updUI();
   }
   function pushHist(s){hist.push(s||snap());if(hist.length>60)hist.shift();}
-  function addItem(k){
+  var saved=false,justDragged=false;
+  function addItem(k,px,py){
     pushHist();
     var j=function(){return (Math.random()-.5)*.24;};
-    var it={id:S.nextId++,k:k,x:.5+j(),y:.5+j(),s:24,r:0,z:++S.zc};
+    var it={id:S.nextId++,k:k,x:px==null?.5+j():px,y:py==null?.5+j():py,s:24,r:0,z:++S.zc};
     S.items.push(it);S.sel=it.id;
     render(it.id);save();
   }
@@ -432,7 +469,7 @@ body.present #nameBox{display:none}
     resetClear();pushHist();S.items=[];S.strokes=[];S.sel=null;render();save();
   });
   function resetClear(){clearTimeout(clearTimer);var b=$('clearBtn');b.classList.remove('ask');b.textContent='모두 지우기';}
-  $('saveBtn').addEventListener('click',function(){$('veil').classList.add('on');});
+  $('saveBtn').addEventListener('click',function(){$('veil').classList.add('on');saved=true;updUI();});
   $('veilOk').addEventListener('click',function(){$('veil').classList.remove('on');});
 
   $('presentBtn').addEventListener('click',function(){
@@ -452,15 +489,51 @@ body.present #nameBox{display:none}
     ['bigBtn','smallBtn','rotBtn','delBtn'].forEach(function(id){$(id).disabled=!has;});
     $('undoBtn').disabled=!hist.length;
     $('clearBtn').disabled=!n&&!S.strokes.length;
-    $('st2t').textContent=n>=2?'물건 '+n+'개 붙였어요':'물건 2개 이상 붙여요 ('+n+'/2)';
+    $('st1').classList.toggle('done',n>=1);
+    $('st2t').textContent=n>=2?'2개 이상 붙였어요 ('+n+'개)':'2개 이상 붙여요 ('+n+'/2)';
     $('st2').classList.toggle('done',n>=2);
     $('st3').classList.toggle('done',!!S.name.trim());
+    $('st4').classList.toggle('done',saved);
     updBadges();
   }
 
+  /* ---------- 목록에서 판으로 끌어 넣기 (가로로 끌 때) ---------- */
+  var gd=null;
+  grid.addEventListener('pointerdown',function(e){
+    var b=e.target.closest('.item');if(!b)return;
+    gd={k:Number(b.dataset.k),x0:e.clientX,y0:e.clientY,id:e.pointerId,b:b,g:null};
+  });
+  grid.addEventListener('pointermove',function(e){
+    if(!gd||e.pointerId!==gd.id)return;
+    var dx=e.clientX-gd.x0,dy=e.clientY-gd.y0;
+    if(!gd.g){
+      if(Math.abs(dx)>14&&Math.abs(dx)>Math.abs(dy)*1.2){
+        var g=document.createElement('div');
+        g.style.cssText='position:fixed;width:72px;height:72px;pointer-events:none;z-index:9000;opacity:.9;transform:translate(-50%,-50%)';
+        g.innerHTML=svg(ITEMS[gd.k][2]);g.firstChild.style.cssText='width:100%;height:100%';
+        document.body.appendChild(g);gd.g=g;
+        try{gd.b.setPointerCapture(e.pointerId);}catch(err){}
+      }else return;
+    }
+    gd.g.style.left=e.clientX+'px';gd.g.style.top=e.clientY+'px';
+  });
+  function endGrid(e,drop){
+    if(!gd||e.pointerId!==gd.id)return;
+    var g=gd.g,k=gd.k;gd=null;
+    if(!g)return;
+    g.remove();justDragged=true;setTimeout(function(){justDragged=false;},150);
+    if(!drop)return;
+    var r=stage.getBoundingClientRect();
+    if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+      addItem(k,Math.min(.95,Math.max(.05,(e.clientX-r.left)/r.width)),Math.min(.95,Math.max(.05,(e.clientY-r.top)/r.height)));
+    }
+  }
+  grid.addEventListener('pointerup',function(e){endGrid(e,true);});
+  grid.addEventListener('pointercancel',function(e){endGrid(e,false);});
+
   /* ---------- 직접 그리기 ---------- */
   var ink=$('ink'),ctx=ink.getContext('2d');
-  var pen={c:'#1f2a44',w:1.8,e:false},cur=null,inkW=0,inkH=0;
+  var pen={c:'#1f2a44',w:.7,e:false},cur=null,inkW=0,inkH=0;
   function fitInk(){
     var d=dims(),r=window.devicePixelRatio||1;
     if(!d.W||!d.H)return;
