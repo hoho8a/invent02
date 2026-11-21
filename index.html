@@ -69,6 +69,8 @@ body.present #exit{display:block}
    <button id="bBig">➕ 크게</button>
    <button id="bSmall">➖ 작게</button>
    <button id="bRot">↻ 돌리기</button>
+   <button id="bFront">⬆ 앞으로</button>
+   <button id="bBack">⬇ 뒤로</button>
    <button id="bCopy">⧉ 복사</button>
    <button id="bDel" class="warn">🗑 빼기</button>
   </div>
@@ -168,7 +170,7 @@ function el(id){return layer.querySelector('[data-id="'+id+'"]')}
 function upd(it){var d=el(it.id);if(d){d.style.transform=tf(it);d.style.setProperty('--inv',1/it.s)}}
 function select(id){
  sel=id;
- if(id!=null){var it=find(id),i=items.indexOf(it);items.splice(i,1);items.push(it)}
+ 
  build();
 }
 function tools(){$('selTools').classList.toggle('hide',sel==null||mode!='move');$('drawTools').classList.toggle('hide',mode!='draw')}
@@ -221,6 +223,8 @@ function selIt(){return sel!=null?find(sel):null}
 $('bBig').onclick=function(){var it=selIt();if(it){it.s=Math.min(4,it.s*1.2);upd(it);save()}};
 $('bSmall').onclick=function(){var it=selIt();if(it){it.s=Math.max(.3,it.s/1.2);upd(it);save()}};
 $('bRot').onclick=function(){var it=selIt();if(it){it.r=(it.r+15)%360;upd(it);save()}};
+$('bFront').onclick=function(){var it=selIt();if(it){items.splice(items.indexOf(it),1);items.push(it);build();save()}};
+$('bBack').onclick=function(){var it=selIt();if(it){items.splice(items.indexOf(it),1);items.unshift(it);build();save()}};
 $('bCopy').onclick=function(){var it=selIt();if(it){var n={id:uid++,t:it.t,x:Math.min(W,it.x+40),y:Math.min(H,it.y+40),s:it.s,r:it.r};items.push(n);select(n.id);save()}};
 $('bDel').onclick=function(){var it=selIt();if(it){items.splice(items.indexOf(it),1);sel=null;build();save()}};
 var t2;$('bReset').onclick=function(){var b=this;if(b.dataset.ask){def();redraw();build();save();b.textContent='처음으로';delete b.dataset.ask;return}b.dataset.ask=1;b.textContent='정말 처음부터?';clearTimeout(t2);t2=setTimeout(function(){b.textContent='처음으로';delete b.dataset.ask},3000)};
