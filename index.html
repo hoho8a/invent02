@@ -2,12 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>발명 상자</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:#FFE2DE;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
-#app{display:flex;flex-direction:column;height:100%}
+html,body{margin:0;height:100%;height:100dvh;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior:none;background:#FFE2DE;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
 #tools{flex:none;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:8px 10px;background:#fff;border-bottom:3px solid #FFC9C2}
 .grp{display:flex;gap:6px;align-items:center;padding:0 6px;border-left:2px solid #eee}
 .grp:first-child{border-left:0}
@@ -20,6 +20,17 @@ button.warn{background:#FFD9BE}
 .dot.on{box-shadow:0 0 0 4px #26233A;background-clip:padding-box}
 .hide{display:none!important}
 #ver{font-size:12px;color:#999;margin-left:4px}
+button{touch-action:manipulation}
+#tools{max-height:48vh;max-height:48dvh;overflow-y:auto}
+/* 폰(좁은 화면·낮은 화면)에서는 버튼을 작게 */
+@media (max-width:760px),(max-height:520px){
+ #tools{gap:4px;padding:4px 6px}
+ .grp{gap:4px;padding:0 3px}
+ button{font-size:14px;min-height:40px;min-width:40px;padding:0 9px;border-radius:12px}
+ .dot{min-width:34px;width:34px;height:34px;min-height:34px;border-width:3px}
+ #ver{display:none}
+}
+@media (max-height:520px){#tools{max-height:42vh;max-height:42dvh}}
 #view{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
 #wrap{position:relative}
 #stage{position:absolute;left:0;top:0;width:1100px;height:570px;transform-origin:0 0;background:#fff;touch-action:none;overflow:hidden}
@@ -165,6 +176,14 @@ function build(){
  });
  tools();
 }
+/* 빼기/✕: 처음 자리로 돌아가기 (복사본은 없앰) */
+function goHome(it){
+ var st=null;
+ if(!it.c){for(var i=0;i<START.length;i++){if(START[i][0]===it.t){st=START[i];break}}}
+ if(st){it.x=st[1];it.y=st[2];it.s=st[3];it.r=0}
+ else{items.splice(items.indexOf(it),1)}
+ sel=null;build();save();
+}
 function find(id){for(var i=0;i<items.length;i++)if(items[i].id==id)return items[i]}
 function el(id){return layer.querySelector('[data-id="'+id+'"]')}
 function upd(it){var d=el(it.id);if(d){d.style.transform=tf(it);d.style.setProperty('--inv',1/it.s)}}
@@ -182,7 +201,7 @@ layer.addEventListener('pointerdown',function(e){
  var d=e.target.closest('.item');if(!d)return;
  var it=find(d.dataset.id),p=pt(e),h=e.target.closest('.h');
  e.preventDefault();e.stopPropagation();
- if(h&&h.classList.contains('del')){items.splice(items.indexOf(it),1);sel=null;build();save();return}
+ if(h&&h.classList.contains('del')){goHome(it);return}
  if(sel!==it.id){select(it.id);d=el(it.id)}
  var type=h?(h.classList.contains('rot')?'rot':'siz'):'move';
  act={type:type,it:it,ox:p.x-it.x,oy:p.y-it.y,id:e.pointerId};
@@ -225,8 +244,8 @@ $('bSmall').onclick=function(){var it=selIt();if(it){it.s=Math.max(.3,it.s/1.2);
 $('bRot').onclick=function(){var it=selIt();if(it){it.r=(it.r+15)%360;upd(it);save()}};
 $('bFront').onclick=function(){var it=selIt();if(it){items.splice(items.indexOf(it),1);items.push(it);build();save()}};
 $('bBack').onclick=function(){var it=selIt();if(it){items.splice(items.indexOf(it),1);items.unshift(it);build();save()}};
-$('bCopy').onclick=function(){var it=selIt();if(it){var n={id:uid++,t:it.t,x:Math.min(W,it.x+40),y:Math.min(H,it.y+40),s:it.s,r:it.r};items.push(n);select(n.id);save()}};
-$('bDel').onclick=function(){var it=selIt();if(it){items.splice(items.indexOf(it),1);sel=null;build();save()}};
+$('bCopy').onclick=function(){var it=selIt();if(it){var n={id:uid++,t:it.t,c:1,x:Math.min(W,it.x+40),y:Math.min(H,it.y+40),s:it.s,r:it.r};items.push(n);select(n.id);save()}};
+$('bDel').onclick=function(){var it=selIt();if(it)goHome(it)};
 var t2;$('bReset').onclick=function(){var b=this;if(b.dataset.ask){def();redraw();build();save();b.textContent='처음으로';delete b.dataset.ask;return}b.dataset.ask=1;b.textContent='정말 처음부터?';clearTimeout(t2);t2=setTimeout(function(){b.textContent='처음으로';delete b.dataset.ask},3000)};
 /* 발표하기 */
 $('bPres').onclick=function(){sel=null;setMode('move');document.body.classList.add('present');build();fit();
@@ -238,6 +257,11 @@ function fit(){
  var w=$('wrap');w.style.width=W*k+'px';w.style.height=H*k+'px';$('stage').style.transform='scale('+k+')';
 }
 window.addEventListener('resize',fit);document.addEventListener('fullscreenchange',function(){setTimeout(fit,100)});
+/* 폰: 확대(핀치·더블탭) 막기, 도구줄 높이가 바뀌면 화면 다시 맞추기 */
+['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()})});
+document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+var lt=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-lt<350&&!(e.target.closest&&e.target.closest('#tools')))e.preventDefault();lt=n},{passive:false});
+if(window.ResizeObserver){new ResizeObserver(function(){fit()}).observe($('view'))}
 build();redraw();fit();setTimeout(fit,200);
 })();
 </script>
